@@ -215,13 +215,13 @@ const clouds = [];
 
 // 초기화 함수에서 구름 생성
 function initClouds() {
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 500; i++) {
         clouds.push({
             x: Math.random() * canvas.width * 3,
             y: Math.random() * (canvas.height / 2 - 70),
             width: Math.random() * 400 + 200,
             height: Math.random() * 100 + 50,
-            speed: Math.random() * 0.2 + 0.05 // 속도를 더 느리게 조정
+            speed: Math.random() * 0.2 + 0.1 // 속도를 더 느리게 조정
         });
     }
 }
