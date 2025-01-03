@@ -69,6 +69,11 @@ window.addEventListener("keydown", (e) => {
     }
 });
 
+window.addEventListener("keyup", (e) => {
+    if (e.code === "ArrowRight") keys.right = false;
+    if (e.code === "ArrowLeft") keys.left = false;
+});
+
 function closeScroll() {
     if (currentOpenScrollIndex !== -1) {
         boxes[currentOpenScrollIndex].showText = false;
@@ -77,10 +82,34 @@ function closeScroll() {
     }
 }
 
-window.addEventListener("keyup", (e) => {
-    if (e.code === "ArrowRight") keys.right = false;
-    if (e.code === "ArrowLeft") keys.left = false;
-});
+// 터치 이벤트 처리를 위한 함수
+function handleTouch(e) {
+    const touch = e.touches[0];
+    const width = window.innerWidth;
+    const x = touch.clientX;
+
+    if (x < width / 3) {
+        keys.left = true;
+        keys.right = false;
+    } else if (x > (2 * width) / 3) {
+        keys.right = true;
+        keys.left = false;
+    } else if (!isJumping) {
+        isJumping = true;
+        jumpVelocity = -jumpStrength;
+        closeScroll();
+    }
+}
+
+function handleTouchEnd() {
+    keys.left = false;
+    keys.right = false;
+}
+
+// 터치 이벤트 리스너 추가
+window.addEventListener("touchstart", handleTouch);
+window.addEventListener("touchmove", handleTouch);
+window.addEventListener("touchend", handleTouchEnd);
 
 // 캐릭터 그리기 함수
 function drawCharacter() {
