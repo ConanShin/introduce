@@ -343,38 +343,110 @@ function drawDesk(x, y) {
 
 // 물음표 박스 그리기 함수
 function drawBoxes() {
+    const currentTime = Date.now();
+    const rotationAngle = ((currentTime % 2000) / 2000) * Math.PI * 2; // 2초마다 한 바퀴 회전
+
     boxes.forEach((box) => {
+        ctx.save(); // 캔버스 상태 저장
+
+        // 상자 중심 좌표
+        const centerX = box.x - scrollOffset + 35;
+        const centerY = box.y + 35;
+
         if (!box.broken) {
-            // 상자 본체
-            ctx.fillStyle = "#FFD700";
-            ctx.fillRect(box.x - scrollOffset, box.y, 70, 70);
+            // 회전 변환 적용 (Y축 기준)
+            const cosAngle = Math.cos(rotationAngle);
+            const sinAngle = Math.sin(rotationAngle);
 
-            // 상자 테두리
-            ctx.strokeStyle = "#DAA520";
-            ctx.lineWidth = 3;
-            ctx.strokeRect(box.x - scrollOffset, box.y, 70, 70);
+            // 상자의 3D 정점 정의 (앞면과 뒷면)
+            const vertices = [
+                { x: -35, y: -35, z: -35 }, // 뒷면 좌상단
+                { x: 35, y: -35, z: -35 },  // 뒷면 우상단
+                { x: 35, y: 35, z: -35 },   // 뒷면 우하단
+                { x: -35, y: 35, z: -35 },  // 뒷면 좌하단
+                { x: -35, y: -35, z: 35 },  // 앞면 좌상단
+                { x: 35, y: -35, z: 35 },   // 앞면 우상단
+                { x: 35, y: 35, z: 35 },    // 앞면 우하단
+                { x: -35, y: 35, z: 35 }    // 앞면 좌하단
+            ];
 
-            // 상자 무늬
-            ctx.fillStyle = "#DAA520";
-            ctx.fillRect(box.x - scrollOffset + 10, box.y + 10, 50, 50);
+            // 회전 및 투영 변환 적용 (3D -> 2D)
+            const projectedVertices = vertices.map((v) => {
+                const rotatedX = v.x * cosAngle - v.z * sinAngle;
+                const rotatedZ = v.x * sinAngle + v.z * cosAngle;
+                return {
+                    x: centerX + rotatedX,
+                    y: centerY + v.y,
+                    z: rotatedZ
+                };
+            });
 
-            // 물음표
-            ctx.fillStyle = "#000";
-            ctx.font = "bold 30px Arial";
-            ctx.fillText("?", box.x - scrollOffset + 27, box.y + 45);
+            // 상자의 면 정의 (6개의 면)
+            const faces = [
+                [0, 1, 2, 3], // 뒷면
+                [4, 5, 6, 7], // 앞면
+                [0, 4, 7, 3], // 왼쪽 면
+                [1, 5, 6, 2], // 오른쪽 면
+                [0, 1, 5, 4], // 윗면
+                [3, 2, 6, 7]  // 아랫면
+            ];
 
-            // 빛 반사 효과
-            ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-            ctx.beginPath();
-            ctx.moveTo(box.x - scrollOffset, box.y);
-            ctx.lineTo(box.x - scrollOffset + 20, box.y);
-            ctx.lineTo(box.x - scrollOffset, box.y + 20);
-            ctx.fill();
+            // 면 그리기 (Z값에 따라 순서 조정)
+            faces.sort((a, b) => {
+                const avgZ1 = a.reduce((sum, i) => sum + projectedVertices[i].z, 0) / a.length;
+                const avgZ2 = b.reduce((sum, i) => sum + projectedVertices[i].z, 0) / b.length;
+                return avgZ2 - avgZ1; // Z값이 큰 면부터 그리기 (뒤에서 앞으로)
+            });
+
+            faces.forEach((face, index) => {
+                ctx.beginPath();
+                ctx.moveTo(projectedVertices[face[0]].x, projectedVertices[face[0]].y);
+                for (let i = 1; i < face.length; i++) {
+                    ctx.lineTo(projectedVertices[face[i]].x, projectedVertices[face[i]].y);
+                }
+                ctx.closePath();
+
+                // 색상 지정 (앞/뒤/옆면 구분)
+                if (face === faces[1]) ctx.fillStyle = "#FFD700"; // 앞면 (밝은 노란색)
+                else if (face === faces[0]) ctx.fillStyle = "#DAA520"; // 뒷면 (어두운 노란색)
+                else ctx.fillStyle = "#E5C100"; // 옆면
+
+                ctx.fill();
+                ctx.strokeStyle = "#000";
+                ctx.stroke();
+
+                // 모든 면에 물음표 추가
+                const faceCenterX = face.reduce((sum, i) => sum + projectedVertices[i].x, 0) / face.length;
+                const faceCenterY = face.reduce((sum, i) => sum + projectedVertices[i].y, 0) / face.length;
+                const faceNormalZ = (projectedVertices[face[0]].z + projectedVertices[face[2]].z) / 2;
+
+                ctx.fillStyle = "#000";
+                ctx.font = "bold 30px Arial";
+                ctx.save();
+                ctx.translate(faceCenterX, faceCenterY);
+
+                // 면의 방향에 따라 크기 조정
+                const scale = Math.abs(faceNormalZ) / 35;
+                ctx.scale(scale, scale);
+
+                // 회전 각도 계산 및 적용
+                let rotationAngle = 0;
+                if (face === faces[2] || face === faces[3]) { // 왼쪽 또는 오른쪽 면
+                    rotationAngle = Math.PI / 2;
+                } else if (face === faces[4] || face === faces[5]) { // 윗면 또는 아랫면
+                    rotationAngle = Math.atan2(projectedVertices[face[1]].y - projectedVertices[face[0]].y,
+                        projectedVertices[face[1]].x - projectedVertices[face[0]].x);
+                }
+                ctx.rotate(rotationAngle);
+
+                ctx.fillText("?", -10, 10);
+                ctx.restore();
+            });
+
         } else if (box.breakProgress < 1) {
-            // 깨지는 애니메이션
+            // 깨지는 애니메이션 (기존 코드 유지)
             ctx.globalAlpha = 1 - box.breakProgress;
 
-            // 깨진 조각들
             for (let i = 0; i < 4; i++) {
                 let pieceX = box.x - scrollOffset + (i % 2) * 35;
                 let pieceY = box.y + Math.floor(i / 2) * 35;
@@ -386,8 +458,12 @@ function drawBoxes() {
 
             ctx.globalAlpha = 1;
         }
+
+        ctx.restore(); // 캔버스 상태 복원
     });
 }
+
+
 
 
 // 텍스트 그리기 함수
@@ -512,7 +588,7 @@ function drawIntroText() {
 
             // 닫기 안내 텍스트
             ctx.font = "16px Arial";
-            ctx.fillText("Press 'ESC' to close", scrollX + scrollWidth / 2, scrollY + scrollHeight - 20);
+            ctx.fillText("닫으려면 'ESC' 혹은 'Jump'를 누르세요", scrollX + scrollWidth / 2, scrollY + scrollHeight - 20);
 
             // 텍스트 스타일 초기화
             ctx.textAlign = "left";
