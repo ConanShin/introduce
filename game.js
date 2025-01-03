@@ -23,19 +23,23 @@ const groundY = canvas.height - 150; // 캐릭터의 기본 Y 위치
 
 // 물음표 박스 관련 변수
 const boxes = [
-    { x: 300, y: canvas.height - 250, showText: false, broken: false, breakProgress: 0 },
-    { x: 800, y: canvas.height - 250, showText: false, broken: false, breakProgress: 0 },
-    { x: 1500, y: canvas.height - 250, showText: false, broken: false, breakProgress: 0 },
-    { x: 2200, y: canvas.height - 250, showText: false, broken: false, breakProgress: 0 }
+    { x: 300, y: canvas.height - 320, showText: false, broken: false, breakProgress: 0 },
+    { x: 800, y: canvas.height - 370, showText: false, broken: false, breakProgress: 0 },
+    { x: 1500, y: canvas.height - 320, showText: false, broken: false, breakProgress: 0 },
+    { x: 2200, y: canvas.height - 380, showText: false, broken: false, breakProgress: 0 },
+    { x: 2900, y: canvas.height - 320, showText: false, broken: false, breakProgress: 0 },
+    { x: 3600, y: canvas.height - 360, showText: false, broken: false, breakProgress: 0 }
 ];
 
 
 // 자기소개 텍스트
 const introTexts = [
-    { x: 300, text: "안녕하세요! 저는 홍길동입니다." },
-    { x: 800, text: "저는 프로그래밍을 좋아해요!" },
-    { x: 1500, text: "취미는 독서와 게임입니다." },
-    { x: 2200, text: "만나서 반가워요!" },
+    { x: 300, text: "안녕하세요! 제 이름은 신철민입니다.\n영어 이름은 코난이고, 편하게 '코난'이라고 불러주세요." },
+    { x: 800, text: "저의 MBTI는 INFJ입니다.\n타인의 감정을 잘 공감하며,\n조화로운 분위기를 만드는 데 힘쓰고 있습니다." },
+    { x: 1500, text: "현재 저는 백엔드 개발을 주업으로 하고 있습니다.\nLLM, Kubernetes, CI/CD 등 다양한 기술에도\n큰 관심을 가지고 배우고 있습니다." },
+    { x: 2200, text: "빨래를 개거나 하늘을 보며 공상하는 것을 좋아합니다.\n그리고 가장 좋아하는 음식은 떡볶이입니다!" },
+    { x: 2900, text: "취미는 eSports 팀 T1을 응원하는 것이며,\n최근에는 와이프와 함께 뜨개질을 시작했습니다." },
+    { x: 3600, text: "함께 일하게 되어 정말 기쁩니다.\n서로 배우고 성장하는 관계가 되었으면 좋겠습니다.\n앞으로 잘 부탁드립니다!" }
 ];
 
 // 파티클 관련 변수
@@ -47,6 +51,10 @@ let keys = {
     left: false,
 };
 
+let currentOpenScrollIndex = -1;
+let scrollAnimationProgress = 0;
+let isScrollClosing = false;
+
 // 키보드 이벤트 리스너
 window.addEventListener("keydown", (e) => {
     if (e.code === "ArrowRight") keys.right = true;
@@ -54,8 +62,20 @@ window.addEventListener("keydown", (e) => {
     if (e.code === "Space" && !isJumping) {
         isJumping = true;
         jumpVelocity = -jumpStrength;
+        closeScroll();
+    }
+    if (e.code === 'Escape') {
+        closeScroll();
     }
 });
+
+function closeScroll() {
+    if (currentOpenScrollIndex !== -1) {
+        boxes[currentOpenScrollIndex].showText = false;
+        currentOpenScrollIndex = -1;
+        scrollAnimationProgress = 1;
+    }
+}
 
 window.addEventListener("keyup", (e) => {
     if (e.code === "ArrowRight") keys.right = false;
@@ -64,42 +84,82 @@ window.addEventListener("keyup", (e) => {
 
 // 캐릭터 그리기 함수
 function drawCharacter() {
-    // 몸통
-    ctx.fillStyle = "#FF6347"; // 빨간색 몸통
-    ctx.fillRect(characterX, characterY, characterWidth, characterHeight);
+    const centerX = characterX + characterWidth / 2;
+    const headRadius = characterWidth / 2;
 
-    // 머리
-    ctx.fillStyle = "#FFA07A"; // 살구색 머리
+    // 그림자
+    ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
     ctx.beginPath();
-    ctx.arc(characterX + characterWidth / 2, characterY - 15, 20, 0, Math.PI * 2);
+    ctx.ellipse(centerX, characterY + characterHeight, characterWidth / 2, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 다리
+    ctx.fillStyle = "#0000FF";
+    if (isJumping) {
+        ctx.fillRect(characterX + 5, characterY + characterHeight - 30, characterWidth / 2 - 10, 20);
+        ctx.fillRect(characterX + characterWidth / 2 + 5, characterY + characterHeight - 30, characterWidth / 2 - 10, 20);
+    } else {
+        ctx.fillRect(characterX + 5, characterY + characterHeight - 40, characterWidth / 2 - 10, 30);
+        ctx.fillRect(characterX + characterWidth / 2 + 5, characterY + characterHeight - 40, characterWidth / 2 - 10, 30);
+    }
+
+    // 신발
+    ctx.fillStyle = "#8B4513";
+    ctx.fillRect(characterX + 5, characterY + characterHeight - 15, characterWidth / 2 - 10, 15);
+    ctx.fillRect(characterX + characterWidth / 2 + 5, characterY + characterHeight - 15, characterWidth / 2 - 10, 15);
+
+    // 멜빵 바지
+    ctx.fillStyle = "#0000FF";
+    ctx.fillRect(characterX, characterY + characterHeight / 2 - 10, characterWidth, characterHeight / 2 - 20);
+
+    // 상의
+    ctx.fillStyle = "#FF0000";
+    ctx.fillRect(characterX, characterY, characterWidth, characterHeight / 2);
+
+    // 팔
+    ctx.fillStyle = "#FAD6A5";
+    ctx.fillRect(characterX - 10, characterY + 10, 10, characterHeight / 2);
+    ctx.fillRect(characterX + characterWidth, characterY + 10, 10, characterHeight / 2);
+
+    // 장갑
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath();
+    ctx.arc(characterX - 5, characterY + characterHeight / 2 + 10, 7, 0, Math.PI * 2);
+    ctx.arc(characterX + characterWidth + 5, characterY + characterHeight / 2 + 10, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 얼굴
+    ctx.fillStyle = "#FAD6A5";
+    ctx.beginPath();
+    ctx.arc(centerX, characterY, headRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 모자
+    ctx.fillStyle = "#FF0000";
+    ctx.beginPath();
+    ctx.arc(centerX, characterY - 5, headRadius + 5, Math.PI, 0);
     ctx.fill();
 
     // 눈
-    ctx.fillStyle = "#000000"; // 검은색 눈
+    ctx.fillStyle = "#000000";
     ctx.beginPath();
-    ctx.arc(characterX + characterWidth / 2 - 7, characterY - 20, 4, 0, Math.PI * 2);
-    ctx.arc(characterX + characterWidth / 2 + 7, characterY - 20, 4, 0, Math.PI * 2);
+    ctx.arc(centerX - headRadius / 3, characterY - 5, 3, 0, Math.PI * 2);
+    ctx.arc(centerX + headRadius / 3, characterY - 5, 3, 0, Math.PI * 2);
     ctx.fill();
 
-    // 입
+    // 콧수염
     ctx.beginPath();
-    ctx.arc(characterX + characterWidth / 2, characterY - 5, 8, 0, Math.PI);
+    ctx.arc(centerX, characterY + 5, headRadius / 2, 0, Math.PI);
     ctx.stroke();
 
-    // 팔
-    ctx.fillStyle = "#FF6347"; // 빨간색 팔
-    ctx.fillRect(characterX - 10, characterY + 10, 10, 30); // 왼팔
-    ctx.fillRect(characterX + characterWidth, characterY + 10, 10, 30); // 오른팔
-
-    // 다리
-    if (isJumping) {
-        ctx.fillRect(characterX + 10, characterY + characterHeight, 10, 10); // 왼다리
-        ctx.fillRect(characterX + characterWidth - 20, characterY + characterHeight, 10, 10); // 오른다리
-    } else {
-        ctx.fillRect(characterX + 10, characterY + characterHeight, 10, 20); // 왼다리
-        ctx.fillRect(characterX + characterWidth - 20, characterY + characterHeight, 10, 20); // 오른다리
-    }
+    // 멜빵 단추
+    ctx.fillStyle = "#FFFF00";
+    ctx.beginPath();
+    ctx.arc(characterX + characterWidth / 4, characterY + characterHeight / 2, 5, 0, Math.PI * 2);
+    ctx.arc(characterX + 3 * characterWidth / 4, characterY + characterHeight / 2, 5, 0, Math.PI * 2);
+    ctx.fill();
 }
+
 
 // 배경 그리기 함수
 function drawBackground() {
@@ -126,10 +186,10 @@ const clouds = [];
 
 // 초기화 함수에서 구름 생성
 function initClouds() {
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 20; i++) {
         clouds.push({
             x: Math.random() * canvas.width * 3,
-            y: Math.random() * (canvas.height / 2 - 100),
+            y: Math.random() * (canvas.height / 2 - 70),
             width: Math.random() * 400 + 200,
             height: Math.random() * 100 + 50,
             speed: Math.random() * 0.2 + 0.05 // 속도를 더 느리게 조정
@@ -139,34 +199,39 @@ function initClouds() {
 
 function drawWindows(offset) {
     const windowWidth = 300;
-    const windowHeight = canvas.height / 2;
+    const windowHeight = canvas.height / 4; // 창문 높이를 줄임
     const windowSpacing = 20;
+    const verticalSpacing = 20; // 상하 창문 사이의 간격
     const totalWidth = windowWidth + windowSpacing;
 
     const repetitions = Math.ceil(canvas.width / totalWidth) + 1;
 
-    for (let i = 0; i < repetitions; i++) {
-        const x = i * totalWidth + offset % totalWidth;
+    for (let row = 0; row < 2; row++) { // 2줄의 창문을 그리기 위한 루프
+        for (let i = 0; i < repetitions; i++) {
+            const x = i * totalWidth + offset % totalWidth;
+            const y = 50 + row * (windowHeight + verticalSpacing); // 각 줄의 y 위치 계산
 
-        // 창문 프레임
-        ctx.fillStyle = "#4A4A4A";
-        ctx.fillRect(x, 50, windowWidth, windowHeight);
+            // 창문 프레임
+            ctx.fillStyle = "#4A4A4A";
+            ctx.fillRect(x, y, windowWidth, windowHeight);
 
-        // 창문 안 하늘 그리기
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(x + 5, 55, windowWidth - 10, windowHeight - 10);
-        ctx.clip();
-        drawSky(x + 5, 55, windowWidth - 10, windowHeight - 10, offset);
-        drawClouds(offset);
-        ctx.restore();
+            // 창문 안 하늘 그리기
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(x + 5, y + 5, windowWidth - 10, windowHeight - 10);
+            ctx.clip();
+            drawSky(x + 5, y + 5, windowWidth - 10, windowHeight - 10, offset);
+            drawClouds(offset, y + 5, windowHeight - 10); // y 위치와 높이 정보 전달
+            ctx.restore();
 
-        // 창문 테두리
-        ctx.strokeStyle = "#6A6A6A";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x + 5, 55, windowWidth - 10, windowHeight - 10);
+            // 창문 테두리
+            ctx.strokeStyle = "#6A6A6A";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x + 5, y + 5, windowWidth - 10, windowHeight - 10);
+        }
     }
 }
+
 
 function drawSky(x, y, width, height) {
     // 그라데이션으로 하늘 표현
@@ -180,71 +245,70 @@ function drawSky(x, y, width, height) {
 function drawClouds(offset) {
     ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
     clouds.forEach(cloud => {
-        // 구름의 위치를 scrollOffset과 연동하여 움직임
-        const cloudX = (cloud.x - offset * 0.3) % (canvas.width * 3);
+        let cloudX = (cloud.x - offset * 0.3) % (canvas.width * 3);
+        if (cloudX < 0) cloudX += canvas.width * 3;
         drawCloud(cloudX, cloud.y, cloud.width, cloud.height);
     });
 }
 
 function drawCloud(x, y, width, height) {
+    const baseRadius = Math.min(width, height) / 3;
+
+    // 그라데이션 효과 생성
+    const gradient = ctx.createRadialGradient(
+        x + width / 2, y + height / 2, 0,
+        x + width / 2, y + height / 2, width / 2
+    );
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0.4)');
+    ctx.fillStyle = gradient;
+
+    // 중앙에 큰 원 그리기
     ctx.beginPath();
-    ctx.moveTo(x, y + height / 2);
-    
-    // 구름의 윤곽을 더 부드럽게 그리기
-    for (let i = 0; i <= width; i += width / 20) {
-        const yOffset = Math.sin(i / 50) * height / 6 + Math.random() * height / 10;
-        ctx.lineTo(x + i, y + height / 2 + yOffset);
-    }
-    
-    ctx.lineTo(x + width, y + height);
-    ctx.lineTo(x, y + height);
-    ctx.closePath();
+    ctx.arc(x + width / 2, y + height / 2, baseRadius, 0, Math.PI * 2);
     ctx.fill();
 }
 
 
+
 function drawRepeatingElements(offset) {
-    const repetitions = Math.ceil(canvas.width / 800) + 1;
+    const repetitions = boxes.length * 800 / 500;
     for (let i = 0; i < repetitions; i++) {
-        const repOffset = offset + i * 800;
+        const repOffset = offset + i * 500;
         
         // 책상
         drawDesk(100 + repOffset, canvas.height - 150);
-        
-        // 컴퓨터
-        drawComputer(150 + repOffset, canvas.height - 200);
     }
 }
 
 
 function drawDesk(x, y) {
+    // 책상 그리기
     ctx.fillStyle = "#8B4513";
     ctx.fillRect(x, y, 250, 10);
-    ctx.fillRect(x, y + 10, 10, 40);
-    ctx.fillRect(x + 240, y + 10, 10, 40);
-}
+    ctx.fillRect(x, y + 10, 10, 70);
+    ctx.fillRect(x + 240, y + 10, 10, 70);
 
-function drawComputer(x, y) {
-    // 모니터
+    // 책상 서랍 그리기
+    ctx.fillStyle = "#A0522D";
+    ctx.fillRect(x + 50, y + 20, 60, 50);
+    ctx.fillStyle = "#D2691E";
+    ctx.fillRect(x + 55, y + 35, 50, 5);
+
+    // 컴퓨터 모니터 그리기
+    ctx.fillStyle = "#2F4F4F";
+    ctx.fillRect(x + 100, y - 80, 100, 70);
     ctx.fillStyle = "#000000";
-    ctx.fillRect(x, y, 100, 60);
-    ctx.fillStyle = "#4169E1";
-    ctx.fillRect(x + 5, y + 5, 90, 50);
-    
-    // 키보드
-    ctx.fillStyle = "#A9A9A9";
-    ctx.fillRect(x + 20, y + 70, 60, 20);
+    ctx.fillRect(x + 105, y - 75, 90, 60);
+
+    // 모니터
+    ctx.fillRect(x + 110, y - 70, 80, 50);
+
+    // 모니터 받침대
+    ctx.fillStyle = "#2F4F4F";
+    ctx.fillRect(x + 140, y - 10, 20, 10);
+    ctx.fillRect(x + 130, y, 40, 5);
 }
-
-function drawPartition(x, y) {
-    ctx.fillStyle = "#A9A9A9";
-    ctx.fillRect(x, y, 5, 150);
-    ctx.fillRect(x, y, 100, 5);
-    ctx.fillStyle = "#D3D3D3";
-    ctx.fillRect(x + 5, y + 5, 95, 145);
-}
-
-
 
 
 
@@ -252,43 +316,174 @@ function drawPartition(x, y) {
 function drawBoxes() {
     boxes.forEach((box) => {
         if (!box.broken) {
+            // 상자 본체
             ctx.fillStyle = "#FFD700";
-            ctx.fillRect(box.x - scrollOffset, box.y, 50, 50);
+            ctx.fillRect(box.x - scrollOffset, box.y, 70, 70);
+
+            // 상자 테두리
+            ctx.strokeStyle = "#DAA520";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(box.x - scrollOffset, box.y, 70, 70);
+
+            // 상자 무늬
+            ctx.fillStyle = "#DAA520";
+            ctx.fillRect(box.x - scrollOffset + 10, box.y + 10, 50, 50);
+
+            // 물음표
             ctx.fillStyle = "#000";
-            ctx.font = "30px Arial";
-            ctx.fillText("?", box.x - scrollOffset + 15, box.y + 35);
+            ctx.font = "bold 30px Arial";
+            ctx.fillText("?", box.x - scrollOffset + 27, box.y + 45);
+
+            // 빛 반사 효과
+            ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+            ctx.beginPath();
+            ctx.moveTo(box.x - scrollOffset, box.y);
+            ctx.lineTo(box.x - scrollOffset + 20, box.y);
+            ctx.lineTo(box.x - scrollOffset, box.y + 20);
+            ctx.fill();
         } else if (box.breakProgress < 1) {
             // 깨지는 애니메이션
             ctx.globalAlpha = 1 - box.breakProgress;
-            ctx.fillStyle = "#FFD700";
-            ctx.fillRect(box.x - scrollOffset, box.y, 50, 50);
+
+            // 깨진 조각들
+            for (let i = 0; i < 4; i++) {
+                let pieceX = box.x - scrollOffset + (i % 2) * 35;
+                let pieceY = box.y + Math.floor(i / 2) * 35;
+                ctx.fillStyle = "#FFD700";
+                ctx.fillRect(pieceX, pieceY, 35, 35);
+                ctx.strokeStyle = "#DAA520";
+                ctx.strokeRect(pieceX, pieceY, 35, 35);
+            }
+
             ctx.globalAlpha = 1;
         }
     });
 }
 
+
 // 텍스트 그리기 함수
 function drawIntroText() {
     boxes.forEach((box, index) => {
-        if (box.showText) {
-            const boxWidth = 220;
-            const boxHeight = 40;
-            const boxX = box.x - scrollOffset; // 물음표 박스의 x 위치
-            const boxY = box.y; // 물음표 박스의 y 위치
+        if (box.showText || (isScrollClosing && index === currentOpenScrollIndex)) {
+            // 두루마리가 새로 열릴 때 애니메이션 초기화
+            if (box.showText && currentOpenScrollIndex !== index) {
+                scrollAnimationProgress = 0;
+                isScrollClosing = false;
+            }
 
-            // 페이드 인 효과를 위한 알파값 계산
-            const alpha = Math.min(1, box.breakProgress * 2);
+            currentOpenScrollIndex = index;
+
+            if (!isScrollClosing && scrollAnimationProgress < 1) {
+                scrollAnimationProgress += 0.03;
+            } else if (isScrollClosing) {
+                scrollAnimationProgress -= 0.03;
+            }
+
+            scrollAnimationProgress = Math.max(0, Math.min(1, scrollAnimationProgress));
+
+            if (scrollAnimationProgress <= 0 && isScrollClosing) {
+                box.showText = false;
+                isScrollClosing = false;
+                currentOpenScrollIndex = -1;
+                return;
+            }
+
+            currentOpenScrollIndex = index;
+
+            const scrollWidth = Math.min(canvas.width * 0.8, 500);
+            const scrollHeight = Math.min(canvas.height * 0.6, 300);
+            const scrollX = (canvas.width - scrollWidth) / 2;
+            const scrollY = (canvas.height - scrollHeight) / 2;
+
+            // 두루마리 배경 그리기
+            ctx.fillStyle = '#F4E5C3';
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 3;
+
+            // 왼쪽 부분
+            ctx.beginPath();
+            ctx.moveTo(scrollX + scrollWidth / 2, scrollY);
+            ctx.lineTo(scrollX + scrollWidth / 2 - scrollWidth / 2 * scrollAnimationProgress, scrollY);
+            ctx.quadraticCurveTo(
+                scrollX + scrollWidth / 2 - scrollWidth / 2 * scrollAnimationProgress - 20,
+                scrollY + scrollHeight / 2,
+                scrollX + scrollWidth / 2 - scrollWidth / 2 * scrollAnimationProgress,
+                scrollY + scrollHeight
+            );
+            ctx.lineTo(scrollX + scrollWidth / 2, scrollY + scrollHeight);
+            ctx.fill();
+            ctx.stroke();
+
+            // 오른쪽 부분
+            ctx.beginPath();
+            ctx.moveTo(scrollX + scrollWidth / 2, scrollY);
+            ctx.lineTo(scrollX + scrollWidth / 2 + scrollWidth / 2 * scrollAnimationProgress, scrollY);
+            ctx.quadraticCurveTo(
+                scrollX + scrollWidth / 2 + scrollWidth / 2 * scrollAnimationProgress + 20,
+                scrollY + scrollHeight / 2,
+                scrollX + scrollWidth / 2 + scrollWidth / 2 * scrollAnimationProgress,
+                scrollY + scrollHeight
+            );
+            ctx.lineTo(scrollX + scrollWidth / 2, scrollY + scrollHeight);
+            ctx.fill();
+            ctx.stroke();
 
             // 텍스트 그리기
-            ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
-            ctx.font = "16px 'Comic Sans MS', cursive";
+            ctx.fillStyle = `rgba(0, 0, 0, ${scrollAnimationProgress})`;
+            ctx.font = "20px 'Comic Sans MS', cursive";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
 
-            // 텍스트를 물음표 박스 위치에 그리기
-            ctx.fillText(introTexts[index].text, 
-                         boxX + 25, // 박스의 중앙 x 좌표 (박스 너비의 절반)
-                         boxY + 25); // 박스의 중앙 y 좌표 (박스 높이의 절반)
+            const text = introTexts[index].text;
+            const lines = text.split('\n');
+
+            // 전체 텍스트 높이 계산
+            let totalHeight = 0;
+            const lineHeight = 35;
+            lines.forEach(line => {
+                const words = line.split(' ');
+                let currentLine = '';
+                for (let n = 0; n < words.length; n++) {
+                    const testLine = currentLine + words[n] + ' ';
+                    const metrics = ctx.measureText(testLine);
+                    const testWidth = metrics.width;
+                    if (testWidth > scrollWidth - 60 && n > 0) {
+                        totalHeight += lineHeight;
+                        currentLine = words[n] + ' ';
+                    } else {
+                        currentLine = testLine;
+                    }
+                }
+                totalHeight += lineHeight;
+            });
+
+            // 시작 y 위치 계산 (세로 중앙)
+            let y = scrollY + (scrollHeight - totalHeight) / 2;
+
+            lines.forEach(line => {
+                const words = line.split(' ');
+                let currentLine = '';
+
+                for (let n = 0; n < words.length; n++) {
+                    const testLine = currentLine + words[n] + ' ';
+                    const metrics = ctx.measureText(testLine);
+                    const testWidth = metrics.width;
+
+                    if (testWidth > scrollWidth - 60 && n > 0) {
+                        ctx.fillText(currentLine, scrollX + scrollWidth / 2, y);
+                        currentLine = words[n] + ' ';
+                        y += lineHeight;
+                    } else {
+                        currentLine = testLine;
+                    }
+                }
+                ctx.fillText(currentLine, scrollX + scrollWidth / 2, y);
+                y += lineHeight;
+            });
+
+            // 닫기 안내 텍스트
+            ctx.font = "16px Arial";
+            ctx.fillText("Press 'ESC' to close", scrollX + scrollWidth / 2, scrollY + scrollHeight - 20);
 
             // 텍스트 스타일 초기화
             ctx.textAlign = "left";
@@ -296,9 +491,6 @@ function drawIntroText() {
         }
     });
 }
-
-
-
 
 // 파티클 생성 함수
 function createParticles(x, y) {
@@ -338,9 +530,9 @@ function updateParticles() {
 function checkCollision() {
     boxes.forEach((box) => {
         if (!box.broken &&
-            characterX < box.x - scrollOffset + 50 &&
+            characterX < box.x - scrollOffset + 70 &&
             characterX + characterWidth > box.x - scrollOffset &&
-            characterY < box.y + 50 &&
+            characterY < box.y + 70 &&
             characterY + characterHeight > box.y) {
             box.broken = true;
             box.showText = true;
