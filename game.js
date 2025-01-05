@@ -225,7 +225,7 @@ function drawBigText() {
     ctx.fillStyle = "#000000";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("Auto 서비스개발팀 화이팅!", canvas.width / 2, canvas.height / 2);
+    ctx.fillText("Auto 개발본부 화이팅!", canvas.width / 2, canvas.height / 2);
 }
 
 // 전역 변수로 구름 배열 추가
