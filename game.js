@@ -76,6 +76,11 @@ window.addEventListener("keyup", (e) => {
 
 function closeScroll() {
     if (currentOpenScrollIndex !== -1) {
+        console.log(currentOpenScrollIndex, introTexts.length - 1)
+        if (currentOpenScrollIndex === 1) {
+            console.log('drawbigtext');
+            drawBigText();
+        }
         boxes[currentOpenScrollIndex].showText = false;
         currentOpenScrollIndex = -1;
         scrollAnimationProgress = 1;
@@ -191,6 +196,7 @@ function drawCharacter() {
 
 
 // 배경 그리기 함수
+let textDrawn = false;
 function drawBackground() {
     // 벽
     ctx.fillStyle = "#F0F0F0";
@@ -208,6 +214,18 @@ function drawBackground() {
 
     // 반복되는 요소들 그리기
     drawRepeatingElements(offset);
+
+    if (boxes[boxes.length - 1].breakProgress > 1) {
+        drawBigText();
+    }
+}
+
+function drawBigText() {
+    ctx.font = "bold 48px Arial";
+    ctx.fillStyle = "#000000";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Auto 서비스개발팀 화이팅!", canvas.width / 2, canvas.height / 2);
 }
 
 // 전역 변수로 구름 배열 추가
