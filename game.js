@@ -34,13 +34,13 @@ const boxes = [
 
 // 자기소개 텍스트
 const introTexts = [
-    { x: 300, text: "안녕하세요! 제 이름은 신철민입니다.\n영어 이름은 코난이고, 편하게 '코난'이라고 불러주셔도 됩니다." },
-    { x: 800, text: "저의 MBTI는 INFJ입니다.\n타인의 감정을 공감하고,\n조화로운 분위기를 만드는 데 노력하고 있습니다." },
-    { x: 1500, text: "현재 저는 백엔드 개발을 주업으로 하고 있습니다.\nLLM, Kubernetes, CI/CD 등 다양한 분야에도\n큰 관심을 가지고 배우고 있습니다." },
-    { x: 2200, text: "빨래를 개거나 하늘을 보며 공상하는 것을 좋아합니다.\n그리고 가장 좋아하는 음식은 떡볶이입니다!" },
-    { x: 2900, text: "취미는 eSports 팀 T1을 응원하는 것이며,\n최근에는 와이프와 함께 뜨개질을 시작했습니다." },
-    { x: 3600, text: "함께 일하게 되어 정말 기쁩니다.\n서로 배우고 성장하는 관계가 되었으면 좋겠습니다.\n앞으로 잘 부탁드립니다!" }
-];
+    { x: 300, text: "안녕하세요! 신철민입니다.\n영어 이름은 코난이고, 편하게 '코난'이라고 불러주셔도 됩니다." },
+    { x: 800, text: "제 MBTI는 INFJ입니다.\n타인의 감정을 잘 공감하고,\n조화로운 분위기를 만드는 걸 좋아합니다." },
+    { x: 1500, text: "백엔드 개발을 주로 해왔지만, 현재는 클라이언트 개발을 하고 있습니다.\nLLM, Kubernetes, CI/CD 등 다양한 분야에도\n꾸준히 관심을 가지고 배우고 있습니다." },
+    { x: 2200, text: "빨래를 개거나 하늘을 보며 공상하는 걸 좋아합니다.\n가장 좋아하는 음식은 떡볶이입니다." },
+    { x: 2900, text: "취미는 eSports 팀 T1을 응원하는 것이고,\n최근에는 아내와 함께 뜨개질을 즐기고 있습니다." },
+    { x: 3600, text: "함께 일하게 되어 정말 기쁩니다.\n서로 배우고 성장할 수 있는 좋은 관계가 되었으면 합니다.\n앞으로 잘 부탁드립니다!" }
+  ];
 
 // 파티클 관련 변수
 let particles = [];
@@ -76,11 +76,6 @@ window.addEventListener("keyup", (e) => {
 
 function closeScroll() {
     if (currentOpenScrollIndex !== -1) {
-        console.log(currentOpenScrollIndex, introTexts.length - 1)
-        if (currentOpenScrollIndex === 1) {
-            console.log('drawbigtext');
-            drawBigText();
-        }
         boxes[currentOpenScrollIndex].showText = false;
         currentOpenScrollIndex = -1;
         scrollAnimationProgress = 1;
@@ -225,7 +220,7 @@ function drawBigText() {
     ctx.fillStyle = "#000000";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("Auto 개발본부 화이팅!", canvas.width / 2, canvas.height / 2);
+    ctx.fillText("Air 서비스팀 화이팅!", canvas.width / 2, canvas.height / 2);
 }
 
 // 전역 변수로 구름 배열 추가
